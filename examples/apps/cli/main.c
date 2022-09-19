@@ -35,9 +35,12 @@
 #include <openthread/tasklet.h>
 #include <openthread/platform/logging.h>
 
+#include <string.h>
 #include <openthread/ip6.h>
 #include <openthread/thread.h>
 #include <openthread/dataset.h>
+#include <openthread/udp.h>
+#include <openthread/message.h>
 
 #include "openthread-system.h"
 #include "cli/cli_config.h"
@@ -45,7 +48,18 @@
 
 #include "lib/platform/reset_util.h"
 
+struct otUdpSocket mSocket;
 struct otOperationalDataset dataset_;
+static const uint16_t PAN_ID = 0x4321;
+static const uint16_t udpSocketPort = 0x2345;
+static const bool udpSender = true;
+
+const char *ipv6String[4] = {
+                                "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf",
+                                "fdd0:e2e6:ee95:3757:27f:ea15:17b7:8582",
+                                "fdd0:e2e6:ee95:3757:63b0:b693:d14d:355f",
+                                "fdd0:e2e6:ee95:3757:9893:d993:3843:6292"
+                            };
 
 /**
  * This function initializes the CLI app.
@@ -94,13 +108,19 @@ static const otCliCommand kCommands[] = {
 };
 #endif // OPENTHREAD_POSIX && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 
-void setChannel(const uint8_t channel)
+static void setPanId(const uint16_t panId)
+{
+    dataset_.mPanId = panId;
+    dataset_.mComponents.mIsPanIdPresent = true;
+}
+
+static void setChannel(const uint8_t channel)
 {
     dataset_.mChannel = channel;
     dataset_.mComponents.mIsChannelPresent = true;
 }
 
-int setNetworkKey(const uint8_t *networkKey)
+static int setNetworkKey(const uint8_t *networkKey)
 {
     if (networkKey == NULL)
     {
@@ -113,7 +133,7 @@ int setNetworkKey(const uint8_t *networkKey)
     return 0;
 }
 
-int setNetworkName(const char *networkName)
+static int setNetworkName(const char *networkName)
 {
     if (networkName == NULL)
     {
@@ -143,11 +163,6 @@ void initCustomValues(otInstance *instance)
         err = otDatasetGetPending(instance, &dataset_);
     }
 
-    // if (err != OT_ERROR_NONE)
-    // {
-    //     return;
-    // }
-
     const char *networkName = "OpenThread-Fourtress";
     const uint8_t networkKey[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                    0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
@@ -156,8 +171,62 @@ void initCustomValues(otInstance *instance)
     setChannel(channel);
     setNetworkName(networkName);
     setNetworkKey(networkKey);
+    setPanId(PAN_ID);
 
     otDatasetSetActive(instance, &dataset_);
+}
+
+static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageInfo)
+{
+    char buf[1500];
+    int  length;
+
+    otCliOutputFormat("%d bytes from ", otMessageGetLength(aMessage) - otMessageGetOffset(aMessage));
+    otCliOutputIp6Address(aMessageInfo->mPeerAddr);
+    otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
+
+    length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
+    buf[length] = '\0';
+
+    otCliOutputLine("%s", buf);
+}
+
+static void udpOpen(otInstance *instance)
+{
+    if (!otUdpIsOpen(instance, &mSocket))
+    {
+        otUdpOpen(instance, &mSocket, HandleUdpReceive, NULL);
+    }
+}
+
+static void udpBind(otInstance *instance)
+{
+    otSockAddr sockaddr;
+    sockaddr.mPort = udpSocketPort;
+    otIp6AddressFromString(ipv6String[0], &sockaddr.mAddress);
+
+    otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
+    //TODO: loop through all ipv6 except mine
+}
+
+static void sendUdp(otInstance* instance)
+{
+    const char *string = "hello world";
+    otMessage *       message = NULL;
+    otMessageInfo     messageInfo;
+    otMessageSettings messageSettings = {true, OT_MESSAGE_PRIORITY_NORMAL};
+
+    memset(&messageInfo, 0, sizeof(messageInfo));
+
+    otIp6AddressFromString(ipv6String[0], &messageInfo.mPeerAddr);
+    messageInfo.mPeerPort = udpSocketPort;
+
+    message = otUdpNewMessage(instance, &messageSettings);
+    otMessageAppend(message, string, strlen(string));
+
+    otUdpSend(instance, &mSocket, message, &messageInfo);
+    message = NULL;
+    otCliOutputFormat("Sending udp message");
 }
 
 int main(int argc, char *argv[])
@@ -196,14 +265,29 @@ pseudo_reset:
     otCliSetUserCommands(kCommands, OT_ARRAY_LENGTH(kCommands), instance);
 #endif
 
-    otIp6SetEnabled(instance, true);
     initCustomValues(instance);
+    otIp6SetEnabled(instance, true);
     otThreadSetEnabled(instance, true);
+
+    openUdp(instance);
+
+    if (!udpSender)
+    {
+        bindUdp(instance);
+    }
+
+    uint16_t counter = 0;
 
     while (!otSysPseudoResetWasRequested())
     {
         otTaskletsProcess(instance);
         otSysProcessDrivers(instance);
+
+        if (udpSender && (counter++ % 1000 == 0))
+        {
+            sendUdp(instance);
+            counter = 0;
+        }
     }
 
     otInstanceFinalize(instance);
