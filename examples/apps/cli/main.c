@@ -34,12 +34,15 @@
 #include <openthread/diag.h>
 #include <openthread/tasklet.h>
 #include <openthread/platform/logging.h>
+#include <openthread/dataset.h>
 
 #include "openthread-system.h"
 #include "cli/cli_config.h"
 #include "common/code_utils.hpp"
 
 #include "lib/platform/reset_util.h"
+
+struct otOperationalDataset dataset_;
 
 /**
  * This function initializes the CLI app.
@@ -87,6 +90,72 @@ static const otCliCommand kCommands[] = {
 #endif
 };
 #endif // OPENTHREAD_POSIX && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+
+void setChannel(const uint8_t channel)
+{
+    dataset_.mChannel = channel;
+    dataset_.mComponents.mIsChannelPresent = true;
+}
+
+int setNetworkKey(const uint8_t *networkKey)
+{
+    if (networkKey == NULL)
+    {
+        return -1;
+    }
+
+    memcpy(dataset_.mNetworkKey.m8, networkKey, sizeof(dataset_.mNetworkKey.m8));
+    dataset_.mComponents.mIsNetworkKeyPresent = true;
+
+    return 0;
+}
+
+int setNetworkName(const char *networkName)
+{
+    if (networkName == NULL)
+    {
+        return -1;
+    }
+
+    if (otNetworkNameFromString(&dataset_.mNetworkName, networkName) == OT_ERROR_NONE)
+    {
+        dataset_.mComponents.mIsNetworkNamePresent = true;
+        return 0;
+    }
+
+    return -1;
+}
+
+void initCustomValues(const otInstance *instance)
+{
+    otError err = OT_ERROR_NONE;
+
+    if (otDatasetIsCommissioned(instance))
+    {
+        err = otDatasetGetActive(instance, &dataset_);
+        otDatasetSetPending(instance, &dataset_);
+    }
+    else
+    {
+        err = otDatasetGetPending(instance, &dataset_);
+    }
+
+    if (err != OT_ERROR_NONE)
+    {
+        return;
+    }
+
+    const char *networkName = "OpenThread-Fourtress";
+    const uint8_t networkKey[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                   0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+    const uint8_t channel = 15;
+
+    setChannel(channel);
+    setNetworkName(networkName);
+    setNetworkKey(networkKey);
+
+    otDatasetSetActive(instance, &dataset_);
+}
 
 int main(int argc, char *argv[])
 {
@@ -136,6 +205,8 @@ pseudo_reset:
 #endif
 
     goto pseudo_reset;
+
+    initCustomValues(instance);
 
     return 0;
 }
