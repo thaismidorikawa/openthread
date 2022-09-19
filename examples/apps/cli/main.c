@@ -34,6 +34,9 @@
 #include <openthread/diag.h>
 #include <openthread/tasklet.h>
 #include <openthread/platform/logging.h>
+
+#include <openthread/ip6.h>
+#include <openthread/thread.h>
 #include <openthread/dataset.h>
 
 #include "openthread-system.h"
@@ -206,7 +209,9 @@ pseudo_reset:
 
     goto pseudo_reset;
 
+    otIp6SetEnabled(instance, true);
     initCustomValues(instance);
+    otThreadSetEnabled(instance, true);
 
     return 0;
 }
