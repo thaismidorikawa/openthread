@@ -182,13 +182,14 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
     int  length;
 
     otCliOutputFormat("%d bytes from ", otMessageGetLength(aMessage) - otMessageGetOffset(aMessage));
-    otCliOutputIp6Address(aMessageInfo->mPeerAddr);
+    // otCliOutputIp6Address(aMessageInfo->mPeerAddr);
+    // otIp6AddressToString
     otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
 
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
-    otCliOutputLine("%s", buf);
+    otCliOutputFormat("%s", buf);
 }
 
 static void openUdp(otInstance *instance)
