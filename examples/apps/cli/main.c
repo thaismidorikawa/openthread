@@ -191,7 +191,7 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
     otCliOutputLine("%s", buf);
 }
 
-static void udpOpen(otInstance *instance)
+static void openUdp(otInstance *instance)
 {
     if (!otUdpIsOpen(instance, &mSocket))
     {
@@ -199,7 +199,7 @@ static void udpOpen(otInstance *instance)
     }
 }
 
-static void udpBind(otInstance *instance)
+static void bindUdp(otInstance *instance)
 {
     otSockAddr sockaddr;
     sockaddr.mPort = udpSocketPort;
