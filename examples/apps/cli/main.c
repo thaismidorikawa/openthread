@@ -129,7 +129,7 @@ int setNetworkName(const char *networkName)
     return -1;
 }
 
-void initCustomValues(const otInstance *instance)
+void initCustomValues(otInstance *instance)
 {
     otError err = OT_ERROR_NONE;
 
@@ -143,10 +143,10 @@ void initCustomValues(const otInstance *instance)
         err = otDatasetGetPending(instance, &dataset_);
     }
 
-    if (err != OT_ERROR_NONE)
-    {
-        return;
-    }
+    // if (err != OT_ERROR_NONE)
+    // {
+    //     return;
+    // }
 
     const char *networkName = "OpenThread-Fourtress";
     const uint8_t networkKey[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
@@ -196,6 +196,10 @@ pseudo_reset:
     otCliSetUserCommands(kCommands, OT_ARRAY_LENGTH(kCommands), instance);
 #endif
 
+    otIp6SetEnabled(instance, true);
+    initCustomValues(instance);
+    otThreadSetEnabled(instance, true);
+
     while (!otSysPseudoResetWasRequested())
     {
         otTaskletsProcess(instance);
@@ -208,10 +212,6 @@ pseudo_reset:
 #endif
 
     goto pseudo_reset;
-
-    otIp6SetEnabled(instance, true);
-    initCustomValues(instance);
-    otThreadSetEnabled(instance, true);
 
     return 0;
 }
