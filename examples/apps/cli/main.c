@@ -52,7 +52,8 @@ struct otUdpSocket mSocket;
 struct otOperationalDataset dataset_;
 static const uint16_t PAN_ID = 0x4321;
 static const uint16_t udpSocketPort = 0x2345;
-static const bool udpSender = true;
+static const bool udpSender = false;
+static const size_t maxTicks = 50000;
 
 const char *ipv6String[4] = {
                                 "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf",
@@ -227,7 +228,7 @@ static void sendUdp(otInstance* instance)
 
     otUdpSend(instance, &mSocket, message, &messageInfo);
     message = NULL;
-    otCliOutputFormat("Sending udp message");
+    otCliOutputFormat("Sending udp message\r\n");
 }
 
 int main(int argc, char *argv[])
@@ -284,7 +285,7 @@ pseudo_reset:
         otTaskletsProcess(instance);
         otSysProcessDrivers(instance);
 
-        if (udpSender && (counter++ % 1000 == 0))
+        if (udpSender && (counter++ % maxTicks == 0))
         {
             sendUdp(instance);
             counter = 0;
