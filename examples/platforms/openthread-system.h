@@ -53,6 +53,9 @@ extern "C" {
  */
 void otSysInit(int argc, char *argv[]);
 
+void otToggleLed(void);
+void otGpioInit(void);
+
 /**
  * This function performs all platform-specific deinitialization for OpenThread's drivers.
  *
