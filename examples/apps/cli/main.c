@@ -193,6 +193,8 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
 
 static void openUdp(otInstance *instance)
 {
+    memset(&mSocket, 0, sizeof(mSocket));
+
     if (!otUdpIsOpen(instance, &mSocket))
     {
         otUdpOpen(instance, &mSocket, HandleUdpReceive, NULL);
@@ -203,7 +205,7 @@ static void bindUdp(otInstance *instance)
 {
     otSockAddr sockaddr;
     sockaddr.mPort = udpSocketPort;
-    otIp6AddressFromString(ipv6String[0], &sockaddr.mAddress);
+    otIp6AddressFromString("::", &sockaddr.mAddress);
 
     otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
     //TODO: loop through all ipv6 except mine
