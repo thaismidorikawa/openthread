@@ -197,7 +197,8 @@ static void openUdp(otInstance *instance)
 
     if (!otUdpIsOpen(instance, &mSocket))
     {
-        otUdpOpen(instance, &mSocket, HandleUdpReceive, NULL);
+        otError error = otUdpOpen(instance, &mSocket, HandleUdpReceive, NULL);
+        otCliOutputFormat("\r\nudp open %s", (error == OT_ERROR_NONE) ? "none" : "failed");
     }
 }
 
@@ -207,7 +208,9 @@ static void bindUdp(otInstance *instance)
     sockaddr.mPort = udpSocketPort;
     otIp6AddressFromString("::", &sockaddr.mAddress);
 
-    otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
+    otError error = otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
+
+    otCliOutputFormat("\r\nudp bind %s", (error == OT_ERROR_NONE) ? "none" : "failed");
     //TODO: loop through all ipv6 except mine
 }
 
