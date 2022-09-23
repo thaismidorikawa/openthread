@@ -188,7 +188,7 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
-    otCliOutputFormat("\nstring (%d) %s", length, buf);
+    otCliOutputFormat("\n\rstring (%d) %s", length, buf);
 }
 
 static void openUdp(otInstance *instance)
