@@ -177,7 +177,7 @@ void initCustomValues(otInstance *instance)
     otDatasetSetActive(instance, &dataset_);
 }
 
-static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageInfo)
+static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     char buf[1500];
     int  length;
@@ -190,6 +190,20 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
 
     otCliOutputFormat("\n\rstring (%d) %s", length, buf);
 }
+
+// static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageInfo)
+// {
+//     char buf[1500];
+//     int  length;
+
+//     otCliOutputFormat("%d - %d bytes from port ", otMessageGetLength(aMessage), otMessageGetOffset(aMessage));
+//     otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
+
+//     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
+//     buf[length] = '\0';
+
+//     otCliOutputFormat("\n\rstring (%d) %s", length, buf);
+// }
 
 static void openUdp(otInstance *instance)
 {
