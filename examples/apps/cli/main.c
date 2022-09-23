@@ -182,15 +182,13 @@ static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageI
     char buf[1500];
     int  length;
 
-    otCliOutputFormat("%d bytes from ", otMessageGetLength(aMessage) - otMessageGetOffset(aMessage));
-    // otCliOutputIp6Address(aMessageInfo->mPeerAddr);
-    // otIp6AddressToString
+    otCliOutputFormat("%d - %d bytes from port ", otMessageGetLength(aMessage), otMessageGetOffset(aMessage));
     otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
 
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
-    otCliOutputFormat("%s", buf);
+    otCliOutputFormat("\nstring (%d) %s", length, buf);
 }
 
 static void openUdp(otInstance *instance)
@@ -278,14 +276,14 @@ pseudo_reset:
         bindUdp(instance);
     }
 
-    uint16_t counter = 0;
+    int counter = 0;
 
     while (!otSysPseudoResetWasRequested())
     {
         otTaskletsProcess(instance);
         otSysProcessDrivers(instance);
 
-        if (udpSender && (counter++ % maxTicks == 0))
+        if (udpSender && (++counter % maxTicks == 0))
         {
             sendUdp(instance);
             counter = 0;
