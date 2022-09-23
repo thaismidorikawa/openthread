@@ -36,6 +36,7 @@
 #include <openthread/platform/logging.h>
 
 #include <string.h>
+#include <hal/nrf_gpio.h>
 #include <openthread/ip6.h>
 #include <openthread/thread.h>
 #include <openthread/dataset.h>
@@ -47,6 +48,8 @@
 #include "common/code_utils.hpp"
 
 #include "lib/platform/reset_util.h"
+
+#define LED_PIN NRF_GPIO_PIN_MAP(0, 6)
 
 struct otUdpSocket mSocket;
 struct otOperationalDataset dataset_;
@@ -185,7 +188,8 @@ static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessag
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
-    otCliOutputFormat("\n\r%d bytes from port 0x%04X: %s", length, aMessageInfo->mPeerPort, buf);
+    otCliOutputFormat("%d bytes from port %d: %s\n\r", length, aMessageInfo->mPeerPort, buf);
+    nrf_gpio_pin_toggle(LED_PIN);
 }
 
 static void openUdp(otInstance *instance)
@@ -262,6 +266,8 @@ pseudo_reset:
 #if OPENTHREAD_POSIX && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
     otCliSetUserCommands(kCommands, OT_ARRAY_LENGTH(kCommands), instance);
 #endif
+
+    nrf_gpio_cfg_output(LED_PIN);
 
     initCustomValues(instance);
     otIp6SetEnabled(instance, true);
