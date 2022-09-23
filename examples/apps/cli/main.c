@@ -182,28 +182,11 @@ static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessag
     char buf[1500];
     int  length;
 
-    otCliOutputFormat("%d - %d bytes from port ", otMessageGetLength(aMessage), otMessageGetOffset(aMessage));
-    otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
-
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
-    otCliOutputFormat("\n\rstring (%d) %s", length, buf);
+    otCliOutputFormat("\n\r%d bytes from port 0x%04X: %s", length, aMessageInfo->mPeerPort, buf);
 }
-
-// static void HandleUdpReceive(otMessage *aMessage, const otMessageInfo *aMessageInfo)
-// {
-//     char buf[1500];
-//     int  length;
-
-//     otCliOutputFormat("%d - %d bytes from port ", otMessageGetLength(aMessage), otMessageGetOffset(aMessage));
-//     otCliOutputFormat(" %d ", aMessageInfo->mPeerPort);
-
-//     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
-//     buf[length] = '\0';
-
-//     otCliOutputFormat("\n\rstring (%d) %s", length, buf);
-// }
 
 static void openUdp(otInstance *instance)
 {
@@ -212,7 +195,6 @@ static void openUdp(otInstance *instance)
     if (!otUdpIsOpen(instance, &mSocket))
     {
         otError error = otUdpOpen(instance, &mSocket, HandleUdpReceive, NULL);
-        otCliOutputFormat("\r\nudp open %s", (error == OT_ERROR_NONE) ? "none" : "failed");
     }
 }
 
@@ -223,9 +205,6 @@ static void bindUdp(otInstance *instance)
     otIp6AddressFromString("::", &sockaddr.mAddress);
 
     otError error = otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
-
-    otCliOutputFormat("\r\nudp bind %s", (error == OT_ERROR_NONE) ? "none" : "failed");
-    //TODO: loop through all ipv6 except mine
 }
 
 static void sendUdp(otInstance* instance)
