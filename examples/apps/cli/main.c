@@ -51,16 +51,11 @@
 struct otUdpSocket mSocket;
 struct otOperationalDataset dataset_;
 static const uint16_t PAN_ID = 0x4321;
-static const uint16_t udpSocketPort = 0x2345;
+static uint16_t udpSocketPort = 0x2345;
 static const bool udpSender = false;
 static const size_t maxTicks = 50000;
 
-const char *ipv6String[4] = {
-                                "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf",
-                                "fdd0:e2e6:ee95:3757:27f:ea15:17b7:8582",
-                                "fdd0:e2e6:ee95:3757:63b0:b693:d14d:355f",
-                                "fdd0:e2e6:ee95:3757:9893:d993:3843:6292"
-                            };
+static char ipv6String[] = "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf";
 
 /**
  * This function initializes the CLI app.
@@ -177,6 +172,69 @@ void initCustomValues(otInstance *instance)
     otDatasetSetActive(instance, &dataset_);
 }
 
+static char* getNextArg(char* cstring)
+{
+    return strtok(cstring, ' ');
+}
+
+static bool isCommand(char* cstring)
+{
+    char *ptr = getNextArg(cstring);
+
+    if (ptr == NULL)
+    {
+        otCliOutputFormat("isCommand nullptr");
+        return false;
+    }
+
+    return ((strcmp(ptr, "peer") == 0) ||
+            (strcmp(ptr, "msg") == 0) ||
+            (strcmp(ptr, "set") == 0));
+}
+
+static void handleCommand(char* cstring)
+{
+    char *ptr = getNextArg(cstring);
+
+    if (ptr == NULL)
+    {
+        otCliOutputFormat("handleCommand nullptr");
+        return;
+    }
+
+    if (strcmp(ptr, "set") == 0)
+    {
+        otCliOutputFormat("set: %s", ptr);
+        ptr = getNextArg(NULL);
+
+        if (strcmp(ptr, "led") == 0)
+        {
+            otToggleLed();
+        }
+    }
+    else if (strcmp(ptr, "peer") == 0)
+    {
+        otCliOutputFormat("peer: %s", ptr);
+
+        ptr = getNextArg(NULL);
+        memset(ipv6String, '\0', sizeof(ipv6String));
+        strcpy(ipv6String, cstring);
+
+        ptr = getNextArg(NULL);
+        udpSocketPort = atoi(ptr);
+        otCliOutputFormat("ipv6 %s - port %d", ipv6String, udpSocketPort);
+    }
+    else if (strcmp(ptr, "msg") == 0)
+    {
+        ptr = getNextArg(NULL);
+        otCliOutputFormat("print: %s", ptr);
+    }
+    else
+    {
+        otCliOutputFormat("handleCommand unknown: %s", ptr);
+    }
+}
+
 static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     char buf[1500];
@@ -185,8 +243,17 @@ static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessag
     length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
     buf[length] = '\0';
 
+    char bufCopy[1500];
+    memset(bufCopy, '\0', sizeof(bufCopy));
+    strcpy(bufCopy, buf);
+
+    if (isCommand(bufCopy))
+    {
+        strcpy(bufCopy, buf);
+        handleCommand(bufCopy);
+    }
+
     otCliOutputFormat("%d bytes from port %d: %s\n\r", length, aMessageInfo->mPeerPort, buf);
-    otToggleLed();
 }
 
 static void openUdp(otInstance *instance)
@@ -217,7 +284,7 @@ static void sendUdp(otInstance* instance)
 
     memset(&messageInfo, 0, sizeof(messageInfo));
 
-    otIp6AddressFromString(ipv6String[0], &messageInfo.mPeerAddr);
+    otIp6AddressFromString(ipv6String, &messageInfo.mPeerAddr);
     messageInfo.mPeerPort = udpSocketPort;
 
     message = otUdpNewMessage(instance, &messageSettings);

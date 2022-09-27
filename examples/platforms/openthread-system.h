@@ -53,6 +53,10 @@ extern "C" {
  */
 void otSysInit(int argc, char *argv[]);
 
+/**
+ * @brief Custom functions for demo purposes
+ *
+ */
 void otToggleLed(void);
 void otGpioInit(void);
 
