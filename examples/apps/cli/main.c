@@ -183,7 +183,7 @@ static bool isCommand(char* cstring)
 
     if (ptr == NULL)
     {
-        otCliOutputFormat("isCommand nullptr");
+        otCliOutputFormat("isCommand nullptr\r\n");
         return false;
     }
 
@@ -198,13 +198,12 @@ static void handleCommand(char* cstring)
 
     if (ptr == NULL)
     {
-        otCliOutputFormat("handleCommand nullptr");
+        otCliOutputFormat("handleCommand nullptr\r\n");
         return;
     }
 
     if (strcmp(ptr, "set") == 0)
     {
-        otCliOutputFormat("set: %s", ptr);
         ptr = getNextArg(NULL);
 
         if (strcmp(ptr, "led") == 0)
@@ -214,11 +213,9 @@ static void handleCommand(char* cstring)
     }
     else if (strcmp(ptr, "peer") == 0)
     {
-        otCliOutputFormat("peer: %s", ptr);
-
         ptr = getNextArg(NULL);
         memset(ipv6String, '\0', sizeof(ipv6String));
-        strcpy(ipv6String, cstring);
+        strcpy(ipv6String, ptr);
 
         ptr = getNextArg(NULL);
         udpSocketPort = atoi(ptr);
@@ -227,11 +224,11 @@ static void handleCommand(char* cstring)
     else if (strcmp(ptr, "msg") == 0)
     {
         ptr = getNextArg(NULL);
-        otCliOutputFormat("print: %s", ptr);
+        otCliOutputFormat("print: %s\r\n", ptr);
     }
     else
     {
-        otCliOutputFormat("handleCommand unknown: %s", ptr);
+        otCliOutputFormat("handleCommand unknown: %s\r\n", ptr);
     }
 }
 
