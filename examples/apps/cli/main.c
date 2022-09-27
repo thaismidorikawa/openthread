@@ -174,7 +174,7 @@ void initCustomValues(otInstance *instance)
 
 static char* getNextArg(char* cstring)
 {
-    return strtok(cstring, ' ');
+    return strtok(cstring, " ");
 }
 
 static bool isCommand(char* cstring)
