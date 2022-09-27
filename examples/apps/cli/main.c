@@ -347,11 +347,7 @@ pseudo_reset:
     otThreadSetEnabled(instance, true);
 
     openUdp(instance);
-
-    if (!udpSender)
-    {
-        bindUdp(instance);
-    }
+    bindUdp(instance);
 
     int counter = 0;
 
