@@ -180,12 +180,7 @@ static char* getNextArg(char* cstring)
 static bool isCommand(char* cstring)
 {
     char *ptr = getNextArg(cstring);
-
-    if (ptr == NULL)
-    {
-        otCliOutputFormat("isCommand nullptr\r\n");
-        return false;
-    }
+    if (ptr == NULL) return false;
 
     return ((strcmp(ptr, "peer") == 0) ||
             (strcmp(ptr, "msg") == 0) ||
@@ -195,36 +190,53 @@ static bool isCommand(char* cstring)
 static void handleCommand(char* cstring)
 {
     char *ptr = getNextArg(cstring);
-
-    if (ptr == NULL)
-    {
-        otCliOutputFormat("handleCommand nullptr\r\n");
-        return;
-    }
+    if (ptr == NULL) return;
 
     if (strcmp(ptr, "set") == 0)
     {
         ptr = getNextArg(NULL);
+        if (ptr == NULL) return;
 
         if (strcmp(ptr, "led") == 0)
         {
-            otToggleLed();
+            ptr = getNextArg(NULL);
+            if (ptr == NULL) return;
+
+            if (strcmp(ptr, "on") == 0)
+            {
+                otSetLed();
+            }
+            else if (strcmp(ptr, "off") == 0)
+            {
+                otClearLed();
+            }
         }
     }
     else if (strcmp(ptr, "peer") == 0)
     {
         ptr = getNextArg(NULL);
+        if (ptr == NULL) return;
+
         memset(ipv6String, '\0', sizeof(ipv6String));
         strcpy(ipv6String, ptr);
 
         ptr = getNextArg(NULL);
+        if (ptr == NULL) return;
+
         udpSocketPort = atoi(ptr);
-        otCliOutputFormat("ipv6 %s - port %d", ipv6String, udpSocketPort);
+        otCliOutputFormat("update ipv6: %s - %d\r\n", ipv6String, udpSocketPort);
     }
     else if (strcmp(ptr, "msg") == 0)
     {
-        ptr = getNextArg(NULL);
-        otCliOutputFormat("print: %s\r\n", ptr);
+        otCliOutputFormat("print: ");
+
+        while (ptr != NULL)
+        {
+            ptr = getNextArg(NULL);
+            otCliOutputFormat("%s ", ptr);
+        }
+
+        otCliOutputFormat("\r\n");
     }
     else
     {

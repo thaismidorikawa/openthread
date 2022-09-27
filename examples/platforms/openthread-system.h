@@ -58,6 +58,8 @@ void otSysInit(int argc, char *argv[]);
  *
  */
 void otToggleLed(void);
+void otClearLed(void);
+void otSetLed(void);
 void otGpioInit(void);
 
 /**
