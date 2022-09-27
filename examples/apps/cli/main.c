@@ -53,9 +53,9 @@ struct otOperationalDataset dataset_;
 static const uint16_t PAN_ID = 0x4321;
 static uint16_t udpSocketPort = 0x2345;
 static const bool udpSender = false;
-static const size_t maxTicks = 50000;
+static const size_t maxTicks = 500000;
 
-static char ipv6String[] = "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf";
+static char ipv6String[40] = "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf";
 
 /**
  * This function initializes the CLI app.
@@ -204,11 +204,11 @@ static void handleCommand(char* cstring)
 
             if (strcmp(ptr, "on") == 0)
             {
-                otSetLed();
+                otClearLed();
             }
             else if (strcmp(ptr, "off") == 0)
             {
-                otClearLed();
+                otSetLed();
             }
         }
     }
