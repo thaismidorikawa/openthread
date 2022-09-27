@@ -57,10 +57,8 @@ void otSysInit(int argc, char *argv[]);
  * @brief Custom functions for demo purposes
  *
  */
-void otToggleLed(void);
 void otClearLed(void);
 void otSetLed(void);
-void otGpioInit(void);
 
 /**
  * This function performs all platform-specific deinitialization for OpenThread's drivers.

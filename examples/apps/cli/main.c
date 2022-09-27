@@ -55,6 +55,10 @@ static uint16_t udpSocketPort = 0x2345;
 static const bool udpSender = false;
 static const size_t maxTicks = 500000;
 
+static const char *commandMsg = "msg";
+static const char *commandPeer = "peer";
+static const char *commandSet = "set";
+
 static char ipv6String[40] = "fdd0:e2e6:ee95:3757:c593:567a:6e14:ecaf";
 
 /**
@@ -145,7 +149,7 @@ static int setNetworkName(const char *networkName)
     return -1;
 }
 
-void initCustomValues(otInstance *instance)
+void otInitCustomValues(otInstance *instance)
 {
     otError err = OT_ERROR_NONE;
 
@@ -182,9 +186,9 @@ static bool isCommand(char* cstring)
     char *ptr = getNextArg(cstring);
     if (ptr == NULL) return false;
 
-    return ((strcmp(ptr, "peer") == 0) ||
-            (strcmp(ptr, "msg") == 0) ||
-            (strcmp(ptr, "set") == 0));
+    return ((strcmp(ptr, commandMsg) == 0) ||
+            (strcmp(ptr, commandPeer) == 0) ||
+            (strcmp(ptr, commandSet) == 0));
 }
 
 static void handleCommand(char* cstring)
@@ -192,7 +196,7 @@ static void handleCommand(char* cstring)
     char *ptr = getNextArg(cstring);
     if (ptr == NULL) return;
 
-    if (strcmp(ptr, "set") == 0)
+    if (strcmp(ptr, commandSet) == 0)
     {
         ptr = getNextArg(NULL);
         if (ptr == NULL) return;
@@ -212,7 +216,7 @@ static void handleCommand(char* cstring)
             }
         }
     }
-    else if (strcmp(ptr, "peer") == 0)
+    else if (strcmp(ptr, commandPeer) == 0)
     {
         ptr = getNextArg(NULL);
         if (ptr == NULL) return;
@@ -224,48 +228,51 @@ static void handleCommand(char* cstring)
         if (ptr == NULL) return;
 
         udpSocketPort = atoi(ptr);
-        otCliOutputFormat("update ipv6: %s - %d\r\n", ipv6String, udpSocketPort);
+        otCliOutputFormat("new peer ipv6: %s (%d)\r\n", ipv6String, udpSocketPort);
     }
-    else if (strcmp(ptr, "msg") == 0)
+    else if (strcmp(ptr, commandMsg) == 0)
     {
         otCliOutputFormat("print: ");
+        ptr = getNextArg(NULL);
 
         while (ptr != NULL)
         {
-            ptr = getNextArg(NULL);
             otCliOutputFormat("%s ", ptr);
+            ptr = getNextArg(NULL);
         }
 
         otCliOutputFormat("\r\n");
     }
     else
     {
-        otCliOutputFormat("handleCommand unknown: %s\r\n", ptr);
+        otCliOutputFormat("command not implemented: %s\r\n", ptr);
     }
 }
 
 static void HandleUdpReceive(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
-    char buf[1500];
+    char buffer[1500];
     int  length;
 
-    length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buf, sizeof(buf) - 1);
-    buf[length] = '\0';
+    length      = otMessageRead(aMessage, otMessageGetOffset(aMessage), buffer, sizeof(buffer) - 1);
+    buffer[length] = '\0';
 
     char bufCopy[1500];
     memset(bufCopy, '\0', sizeof(bufCopy));
-    strcpy(bufCopy, buf);
+    strcpy(bufCopy, buffer);
 
     if (isCommand(bufCopy))
     {
-        strcpy(bufCopy, buf);
+        strcpy(bufCopy, buffer);
         handleCommand(bufCopy);
     }
-
-    otCliOutputFormat("%d bytes from port %d: %s\n\r", length, aMessageInfo->mPeerPort, buf);
+    else
+    {
+        otCliOutputFormat("%d bytes from port %d: %s\n\r", length, aMessageInfo->mPeerPort, buffer);
+    }
 }
 
-static void openUdp(otInstance *instance)
+static void udpOpen(otInstance *instance)
 {
     memset(&mSocket, 0, sizeof(mSocket));
 
@@ -275,7 +282,7 @@ static void openUdp(otInstance *instance)
     }
 }
 
-static void bindUdp(otInstance *instance)
+static void udpBind(otInstance *instance)
 {
     otSockAddr sockaddr;
     sockaddr.mPort = udpSocketPort;
@@ -284,7 +291,7 @@ static void bindUdp(otInstance *instance)
     otError error = otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
 }
 
-static void sendUdp(otInstance* instance)
+static void udpSend(otInstance* instance)
 {
     const char *string = "hello world";
     otMessage *       message = NULL;
@@ -340,14 +347,12 @@ pseudo_reset:
     otCliSetUserCommands(kCommands, OT_ARRAY_LENGTH(kCommands), instance);
 #endif
 
-    otGpioInit();
-
-    initCustomValues(instance);
+    otInitCustomValues(instance);
     otIp6SetEnabled(instance, true);
     otThreadSetEnabled(instance, true);
 
-    openUdp(instance);
-    bindUdp(instance);
+    udpOpen(instance);
+    udpBind(instance);
 
     int counter = 0;
 
@@ -358,7 +363,7 @@ pseudo_reset:
 
         if (udpSender && (++counter % maxTicks == 0))
         {
-            sendUdp(instance);
+            udpSend(instance);
             counter = 0;
         }
     }
