@@ -291,9 +291,11 @@ static void udpBind(otInstance *instance)
     otError error = otUdpBind(instance, &mSocket, &sockaddr, OT_NETIF_THREAD);
 }
 
-static void udpSend(otInstance* instance)
+static void udpSend(otInstance* instance, uint8_t msgCounter)
 {
-    const char *string = "hello world";
+    const char string[16];
+    snprintf(string, 16, "hello world %d", msgCounter);
+
     otMessage *       message = NULL;
     otMessageInfo     messageInfo;
     otMessageSettings messageSettings = {true, OT_MESSAGE_PRIORITY_NORMAL};
@@ -355,6 +357,7 @@ pseudo_reset:
     udpBind(instance);
 
     int counter = 0;
+    uint8_t msgCounter = 0;
 
     while (!otSysPseudoResetWasRequested())
     {
@@ -363,7 +366,7 @@ pseudo_reset:
 
         if (udpSender && (++counter % maxTicks == 0))
         {
-            udpSend(instance);
+            udpSend(instance, msgCounter++);
             counter = 0;
         }
     }
